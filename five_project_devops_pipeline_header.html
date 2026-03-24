@@ -1,0 +1,198 @@
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.top-header{font-size:13px;font-weight:500;color:var(--color-text-primary);text-align:center;padding:6px 0 10px;border-bottom:2px solid var(--color-text-primary);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px}
+.grid{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr 1fr;gap:8px;font-family:var(--font-sans);padding:0}
+.tier-label{grid-column:1/-1;display:flex;align-items:center;gap:10px;margin-top:10px}
+.tier-label span{font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+.tier-label::after{content:'';flex:1;height:1px;background:var(--color-border-tertiary)}
+.card{border-radius:var(--border-radius-lg);padding:8px 10px;border:0.5px solid}
+.card h3{font-size:11px;font-weight:500;margin-bottom:4px}
+.card ul{list-style:none;padding:0}
+.card li{font-size:10.5px;padding:1.5px 0;display:flex;align-items:baseline;gap:4px;line-height:1.35}
+.card li::before{content:'';width:4px;height:4px;border-radius:50%;flex-shrink:0;display:inline-block;position:relative;top:-1px}
+.arrow-row{grid-column:1/-1;display:flex;justify-content:space-around;padding:0 20px}
+.arrow-row svg{width:14px;height:14px}
+.col-head{font-size:11px;font-weight:500;color:var(--color-text-primary);padding:6px 0 4px;text-align:center;border-bottom:1.5px solid var(--color-border-secondary);line-height:1.3;background:var(--color-background-secondary);border-radius:var(--border-radius-md) var(--border-radius-md) 0 0}
+.c-bl{background:#E6F1FB;border-color:#85B7EB}.c-bl h3{color:#0C447C}.c-bl li{color:#185FA5}.c-bl li::before{background:#378ADD}
+.c-pu{background:#EEEDFE;border-color:#AFA9EC}.c-pu h3{color:#3C3489}.c-pu li{color:#534AB7}.c-pu li::before{background:#7F77DD}
+.c-co{background:#FAECE7;border-color:#F0997B}.c-co h3{color:#712B13}.c-co li{color:#993C1D}.c-co li::before{background:#D85A30}
+.c-te{background:#E1F5EE;border-color:#5DCAA5}.c-te h3{color:#085041}.c-te li{color:#0F6E56}.c-te li::before{background:#1D9E75}
+.c-am{background:#FAEEDA;border-color:#FAC775}.c-am h3{color:#633806}.c-am li{color:#854F0B}.c-am li::before{background:#BA7517}
+@media(prefers-color-scheme:dark){
+.c-bl{background:#042C53;border-color:#378ADD}.c-bl h3{color:#B5D4F4}.c-bl li{color:#85B7EB}.c-bl li::before{background:#378ADD}
+.c-pu{background:#26215C;border-color:#7F77DD}.c-pu h3{color:#CECBF6}.c-pu li{color:#AFA9EC}.c-pu li::before{background:#7F77DD}
+.c-co{background:#4A1B0C;border-color:#D85A30}.c-co h3{color:#F5C4B3}.c-co li{color:#F0997B}.c-co li::before{background:#D85A30}
+.c-te{background:#04342C;border-color:#1D9E75}.c-te h3{color:#9FE1CB}.c-te li{color:#5DCAA5}.c-te li::before{background:#1D9E75}
+.c-am{background:#412402;border-color:#BA7517}.c-am h3{color:#FAC775}.c-am li{color:#EF9F27}.c-am li::before{background:#BA7517}
+}
+</style>
+<div class="top-header">Azure DevOps project name</div>
+<div class="grid">
+  <div class="col-head">Enterprise Data Platform</div>
+  <div class="col-head">Private Markets</div>
+  <div class="col-head">Corporate Market</div>
+  <div class="col-head">PSA RM Value Stream</div>
+  <div class="col-head">Alchemy</div>
+
+  <div class="tier-label"><span>Azure DevOps repos</span></div>
+  <div class="card c-bl">
+    <h3>Repos</h3>
+    <ul>
+      <li>FW.Hummingbird</li>
+      <li>ChangeRequestForDatabricks</li>
+      <li>AnalyticsHub.Databricks.Sage</li>
+    </ul>
+  </div>
+  <div class="card c-bl">
+    <h3>Repo</h3>
+    <ul><li>Private Markets Databricks</li></ul>
+  </div>
+  <div class="card c-bl">
+    <h3>Repo</h3>
+    <ul><li>Corporate Market Databricks</li></ul>
+  </div>
+  <div class="card c-bl">
+    <h3>Repos</h3>
+    <ul><li>Quantlake</li><li>Crisp</li></ul>
+  </div>
+  <div class="card c-bl">
+    <h3>Repo</h3>
+    <ul><li>Alchemy Databricks</li></ul>
+  </div>
+
+  <div class="arrow-row">
+    <svg viewBox="0 0 20 20"><path d="M10 4L10 16M6 12L10 16L14 12" fill="none" stroke="var(--color-text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <svg viewBox="0 0 20 20"><path d="M10 4L10 16M6 12L10 16L14 12" fill="none" stroke="var(--color-text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <svg viewBox="0 0 20 20"><path d="M10 4L10 16M6 12L10 16L14 12" fill="none" stroke="var(--color-text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <svg viewBox="0 0 20 20"><path d="M10 4L10 16M6 12L10 16L14 12" fill="none" stroke="var(--color-text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <svg viewBox="0 0 20 20"><path d="M10 4L10 16M6 12L10 16L14 12" fill="none" stroke="var(--color-text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </div>
+
+  <div class="tier-label"><span>PR approvers</span></div>
+  <div class="card c-pu">
+    <h3>Approval group</h3>
+    <ul><li>Enterprise Data Platform Approvers</li></ul>
+  </div>
+  <div class="card c-pu">
+    <h3>Approval group</h3>
+    <ul><li>Private Markets Databricks Approver Group</li></ul>
+  </div>
+  <div class="card c-pu">
+    <h3>Approval group</h3>
+    <ul><li>Corporate Market Databricks Approval Group</li></ul>
+  </div>
+  <div class="card c-pu">
+    <h3>Approval group</h3>
+    <ul><li>PSA RM Value Stream Approval Group</li></ul>
+  </div>
+  <div class="card c-pu">
+    <h3>Approval group</h3>
+    <ul><li>Alchemy Approval Group</li></ul>
+  </div>
+
+  <div class="arrow-row">
+    <svg viewBox="0 0 20 20"><path d="M10 4L10 16M6 12L10 16L14 12" fill="none" stroke="var(--color-text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <svg viewBox="0 0 20 20"><path d="M10 4L10 16M6 12L10 16L14 12" fill="none" stroke="var(--color-text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <svg viewBox="0 0 20 20"><path d="M10 4L10 16M6 12L10 16L14 12" fill="none" stroke="var(--color-text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <svg viewBox="0 0 20 20"><path d="M10 4L10 16M6 12L10 16L14 12" fill="none" stroke="var(--color-text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <svg viewBox="0 0 20 20"><path d="M10 4L10 16M6 12L10 16L14 12" fill="none" stroke="var(--color-text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </div>
+
+  <div class="tier-label"><span>ServiceNow config items</span></div>
+  <div class="card c-co">
+    <h3>Configuration items</h3>
+    <ul>
+      <li>Data Hubs</li>
+      <li>Data Value Streams</li>
+      <li>Data Interfaces</li>
+      <li>Data APIs</li>
+      <li>Sage</li>
+      <li>Core Platform (Hummingbird)</li>
+    </ul>
+  </div>
+  <div class="card c-co">
+    <h3>Configuration item</h3>
+    <ul><li>Databricks Private Markets Workspace</li></ul>
+  </div>
+  <div class="card c-co">
+    <h3>Configuration item</h3>
+    <ul><li>Databricks - Corporate Market Workspace</li></ul>
+  </div>
+  <div class="card c-co">
+    <h3>Configuration items</h3>
+    <ul><li>Quantlake</li><li>Quantlake Infrastructure</li></ul>
+  </div>
+  <div class="card c-co">
+    <h3>Configuration item</h3>
+    <ul><li>Databricks - Alchemy Workspace</li></ul>
+  </div>
+
+  <div class="arrow-row">
+    <svg viewBox="0 0 20 20"><path d="M10 4L10 16M6 12L10 16L14 12" fill="none" stroke="var(--color-text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <svg viewBox="0 0 20 20"><path d="M10 4L10 16M6 12L10 16L14 12" fill="none" stroke="var(--color-text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <svg viewBox="0 0 20 20"><path d="M10 4L10 16M6 12L10 16L14 12" fill="none" stroke="var(--color-text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <svg viewBox="0 0 20 20"><path d="M10 4L10 16M6 12L10 16L14 12" fill="none" stroke="var(--color-text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <svg viewBox="0 0 20 20"><path d="M10 4L10 16M6 12L10 16L14 12" fill="none" stroke="var(--color-text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </div>
+
+  <div class="tier-label"><span>Service principals</span></div>
+  <div class="card c-te">
+    <h3>Deploying to prod</h3>
+    <ul>
+      <li>sp-app-env-enterprised-pr</li>
+      <li>sp-app-dataplatform-metadata</li>
+    </ul>
+  </div>
+  <div class="card c-te">
+    <h3>Deploying to prod</h3>
+    <ul><li>sp-app-dbricks-uc-private-markets-pr</li></ul>
+  </div>
+  <div class="card c-te">
+    <h3>Deploying to prod</h3>
+    <ul><li>sp-app-bricks-uc-corporate-market-pr</li></ul>
+  </div>
+  <div class="card c-te">
+    <h3>Deploying to prod</h3>
+    <ul><li>sp-app-edp-quantlake-pr</li><li>sp-app-edp-crisp-pr</li></ul>
+  </div>
+  <div class="card c-te">
+    <h3>Deploying to prod</h3>
+    <ul><li>sp-app-dbricks-uc-alchemy-pr</li></ul>
+  </div>
+
+  <div class="arrow-row">
+    <svg viewBox="0 0 20 20"><path d="M10 4L10 16M6 12L10 16L14 12" fill="none" stroke="var(--color-text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <svg viewBox="0 0 20 20"><path d="M10 4L10 16M6 12L10 16L14 12" fill="none" stroke="var(--color-text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <svg viewBox="0 0 20 20"><path d="M10 4L10 16M6 12L10 16L14 12" fill="none" stroke="var(--color-text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <svg viewBox="0 0 20 20"><path d="M10 4L10 16M6 12L10 16L14 12" fill="none" stroke="var(--color-text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <svg viewBox="0 0 20 20"><path d="M10 4L10 16M6 12L10 16L14 12" fill="none" stroke="var(--color-text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </div>
+
+  <div class="tier-label"><span>Databricks Unity Catalog</span></div>
+  <div class="card c-am">
+    <h3>Catalogs touched by SPs</h3>
+    <ul>
+      <li>AnalyticsHub</li>
+      <li>InvestmentHub</li>
+      <li>Enterprise Curated</li>
+      <li>Sage</li>
+      <li>Staging</li>
+    </ul>
+  </div>
+  <div class="card c-am">
+    <h3>Catalog</h3>
+    <ul><li>Private Markets</li></ul>
+  </div>
+  <div class="card c-am">
+    <h3>Catalog</h3>
+    <ul><li>Corporate Market</li></ul>
+  </div>
+  <div class="card c-am">
+    <h3>Catalogs</h3>
+    <ul><li>Quant Lake</li><li>Crisp</li></ul>
+  </div>
+  <div class="card c-am">
+    <h3>Catalog</h3>
+    <ul><li>Alchemy</li></ul>
+  </div>
+</div>
