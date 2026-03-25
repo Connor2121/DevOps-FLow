@@ -1,0 +1,12 @@
+@replace(
+    replace(
+        replace(
+            replace(
+                replace(
+                    replace(pipeline().parameters.par_DynamicJsonParams.ScriptOrQuery,'<SelectColumns>',pipeline().parameters.par_DynamicJsonParams.SelectColumns),
+                    '<SchemaName>',pipeline().parameters.par_DynamicJsonParams.SchemaName),
+                    '<EntityName>',pipeline().parameters.par_DynamicJsonParams.EntityName),
+                    '<IncrementalLoadColumn>',pipeline().parameters.par_DynamicJsonParams.IncrementalLoadColumn),
+                    '<OldWatermarkValue>',pipeline().parameters.par_DynamicJsonParams.WatermarkValue),
+                    '<NewWatermarkValue>', pipeline().parameters.runtime_watermark_value
+                    )
