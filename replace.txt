@@ -1,12 +1,41 @@
-@replace(
-    replace(
-        replace(
-            replace(
-                replace(
-                    replace(pipeline().parameters.par_DynamicJsonParams.ScriptOrQuery,'<SelectColumns>',pipeline().parameters.par_DynamicJsonParams.SelectColumns),
-                    '<SchemaName>',pipeline().parameters.par_DynamicJsonParams.SchemaName),
-                    '<EntityName>',pipeline().parameters.par_DynamicJsonParams.EntityName),
-                    '<IncrementalLoadColumn>',pipeline().parameters.par_DynamicJsonParams.IncrementalLoadColumn),
-                    '<OldWatermarkValue>',pipeline().parameters.par_DynamicJsonParams.WatermarkValue),
-                    '<NewWatermarkValue>', pipeline().parameters.runtime_watermark_value
-                    )
+def build_query(
+    script_or_query: str,
+    select_columns: str,
+    schema_name: str,
+    entity_name: str,
+    incremental_load_column: str,
+    old_watermark_value: str,
+    new_watermark_value: str
+) -> str:
+    """
+    Replaces placeholders in a SQL template with actual parameter values.
+    Replicates the nested @replace logic from ADF.
+
+    Parameters:
+        script_or_query: SQL template containing placeholders
+        select_columns: Value to replace <SelectColumns>
+        schema_name: Value to replace <SchemaName>
+        entity_name: Value to replace <EntityName>
+        incremental_load_column: Value to replace <IncrementalLoadColumn>
+        old_watermark_value: Value to replace <OldWatermarkValue>
+        new_watermark_value: Value to replace <NewWatermarkValue>
+
+    Returns:
+        str: The fully resolved SQL query
+    """
+
+    replacements = {
+        "<SelectColumns>": select_columns,
+        "<SchemaName>": schema_name,
+        "<EntityName>": entity_name,
+        "<IncrementalLoadColumn>": incremental_load_column,
+        "<OldWatermarkValue>": old_watermark_value,
+        "<NewWatermarkValue>": new_watermark_value
+    }
+
+    query = script_or_query
+
+    for placeholder, value in replacements.items():
+        query = query.replace(placeholder, value)
+
+    return query
