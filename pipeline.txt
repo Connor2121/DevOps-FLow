@@ -1,0 +1,296 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+resources:
+  repositories:
+    - repository: azureUtilityScript
+      type: git
+      name: Enterprise Data Platform/azure_utility_scripts
+      ref: release/syPipelineUpdates
+    - repository: Dev
+      type: git
+      name: Developer Enablement/Developer Enablement
+      ref: release/1.1
+    - repository: MainHB
+      type: git
+      name: Enterprise Data Platform/FW.Hummingbird
+      ref: release/syPipelineUpdates
+
+parameters:
+- name: is_directory
+  displayName: Check If Folder List Ex. ci/configs, sql/Reference
+  type: boolean
+  default: False
+
+- name: InputNotebook
+  displayName: List Of Notebook Paths/Names Without Extension Ex. TestNotebook, TestNotebook1 or ci/configs, sql/Reference
+  type: string
+  default: ''
+
+- name: env_selected
+  type: string
+  displayName: Select Environment
+  default: ut
+  values:
+  - ut
+  - st
+  - pr
+
+- name: ConfigurationItemName
+  displayName: Configuration item (Only Required For Prod Release)
+  type: string
+  default: Corporate Market
+  values:
+  - Corporate Market
+  - Core Platform (Humminbird)
+
+- name: AzDoStory
+  displayName: AzDo Work Item ID or Item ID's in a comma seperated list. Can be User Stories, Features, Bugs or Epics. Ex. 320802, 320735, 299620, 7710 or 7710
+  type: string
+  default: '*'
+
+- name: Type
+  displayName: CR Type
+  type: string
+  values:
+  - Application Normal
+  - Application Emergency
+  default: Application Normal
+
+- name: UrgencyStatus
+  displayName: Urgency Status
+  type: string
+  values:
+  - Not Urgent
+  - Business Reprioritization
+  - Corrective Maintenance
+  - Inadequate Preparation
+  default: Not Urgent
+
+- name: IncidentNum
+  displayName: Incident Number
+  type: string
+  default: ' '
+
+- name: TitleStart
+  displayName: Short Description
+  type: string
+  default: '*'
+
+- name: Description
+  displayName: Description
+  type: string
+  default: '*'
+
+- name: StartTime
+  displayName: "Start Time yyyy-MM-dd H:mm EST Ex. 2024-03-31 7:30"
+  type: string
+  default: ' '
+
+- name: Justification
+  type: string
+  displayName: Justification
+  default: '*'
+
+name: Corporate_Market_Release_For_$(Build.RequestedFor)_On_$(Date:yyyyMMdd)
+
+trigger:
+- None
+
+pool:  'DevOpsWindows'
+
+variables:
+  - name: ApprovalStage
+    value: PPToken
+  - name: PRStage
+    value: PR
+  - name: ReviewStage
+    value: ReviewTokenGen
+  - ${{if eq(parameters.ConfigurationItemName, 'None')}}:
+    - name: ConfigurationItem
+      value: ''
+  - ${{if eq(parameters.ConfigurationItemName, 'Core Platform (Humminbird)')}}:
+    - name: ConfigurationItem
+      value: '527546a8933e4e10facff7fe3bba1050'
+  - ${{if eq(parameters.ConfigurationItemName, 'Corporate Market')}}:
+    - name: ConfigurationItem
+      value: '92119835fbbf361078a9fd528eefdc0c'
+  - name: ImplementationPlan
+    value: 'DevOps Pipeline'
+  - name: Title
+    value: ${{ format('{0} - AzdDo Story {1}', parameters.TitleStart, parameters.AzDoStory) }}
+  - name: BackoutPlan
+    value: 'Reverting to previous working version.'
+  - name: ChangeNumber
+    value: ' '
+  - name: Priority
+    value: 5
+  - name: LastPipeline
+    value: true
+  - name: TestPlan
+    value: 'Upon completion of the change, execute report or run a query and have stakeholders validate that updates in the description have been successfully implemented.'
+  - ${{ if eq(parameters.is_directory, True) }}:
+      - name: is_dir_not_file
+        value: 1
+  - ${{ if eq(parameters.is_directory, False) }}:
+      - name: is_dir_not_file
+        value: 0
+
+  - ${{ each parm in parameters }}:
+      - name: ${{ parm.key }}
+        value: ${{ parm.value }}
+
+
+lockBehavior: sequential
+extends:
+  template: Base.yml@Dev
+  parameters:
+    SonarServiceConnection: sonarqube.baringsapps.com
+    SonarProjectKey: Corporate-Market-CR
+    SonarScannerMode: CLI
+    SonarProperties: |
+      sonar.projectKey=Corporate-Market-CR
+    buildSteps: 
+      - ${{ if and(not(eq(parameters.ConfigurationItemName, 'None')), eq(parameters.env_selected, 'pr')) }}:
+        - template: Devops\Templates\Jobs\snow_validation_devops.yml@MainHB
+          parameters:
+            configuration_item_pairs: '$(configuration_item_pairs)'
+            incident_num: '${{parameters.IncidentNum}}'
+            selected_configuration_item_name: '${{parameters.ConfigurationItemName}}'
+            cr_type: '${{parameters.Type}}'
+            cr_title: '${{parameters.TitleStart}}'
+            cr_desc: '${{parameters.Description}}'
+            cr_urgent: 'true'
+            cr_reason: '${{parameters.UrgencyStatus}}'
+            start_time: '${{parameters.StartTime}}'
+            justification: '${{parameters.Justification}}'
+            implementation_plan: '$(ImplementationPlan)'
+            risk_impact_analysis: 'Not needed'
+            backout_plan: '$(BackoutPlan)'
+            azdo_story_num: '${{parameters.AzDoStory}}'
+    deployStages:
+      - ${{ if or(eq(parameters.env_selected, 'ut'), and(not(eq(parameters.ConfigurationItemName, 'None')), not(eq(parameters.env_selected, 'pr')))) }}:
+        - stage: UT
+          jobs:
+            - deployment: CorporateMarketCR_UT
+              environment: CorporateMarketCR_UT
+              strategy:
+                runOnce:
+                  deploy:
+                    steps:
+                      - checkout: self
+                        path: CorporateMarket
+                      - checkout: azureUtilityScript
+                        path: azure_utility_scripts
+                      - template: Devops\Templates\Jobs\add_python_and_libraries_pip_auth.yml@MainHB
+                        parameters:
+                          pip_install_libraries: 'azure-identity==1.23.1 azure-storage-file-datalake==12.13.1 barings-coredataplatform-dbricksAPI --upgrade'
+                          pip_auth_name: 'BaringsPy'
+                      - template: Devops\Templates\Jobs\cli_sp_get_federate_credentials.yml@MainHB
+                        parameters:
+                          azure_subscription: 'EDP UT'
+                          sp_id_var_name: 'ARM_CLIENT_ID'
+                          sp_tenant_var_name: 'ARM_TENANT_ID'
+
+                      - task: PythonScript@0
+                        displayName: 'Run Corporate Market ${{parameters.InputNotebook}}'
+                        inputs:
+                          scriptPath: '$(Agent.BuildDirectory)/azure_utility_scripts/devops/azure_pipelines/run_one_or_more_databricks_sql_files.py'
+                          arguments: '$(WORKSPACE-REGION-URL-UT) $(ARM_TENANT_ID) $(ARM_CLIENT_ID) $(ARM_CLIENT_FEDERATE_UT) $(DATABRICKS-CLUSTERID-UT) "${{parameters.InputNotebook}}" "$(Pipeline.Workspace)/CorporateMarket/DatabricksNotebooks/" "$(Build.BuildId)" "$(is_dir_not_file)" "CorporateMarket" "$(Build.Repository.Name)"'
+                        env:
+                          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+
+      - ${{ if or(eq(parameters.env_selected, 'st'), and(not(eq(parameters.ConfigurationItemName, 'None')), not(eq(parameters.env_selected, 'pr')))) }}:
+        - stage: ST
+          # dependsOn: UT
+          jobs:
+            - deployment: CorporateMarketCR_ST
+              environment: CorporateMarketCR_ST
+              strategy:
+                runOnce:
+                  deploy:
+                    steps:
+                      - checkout: self
+                        path: CorporateMarket
+                      - checkout: azureUtilityScript
+                        path: azure_utility_scripts
+                      - template: Devops\Templates\Jobs\add_python_and_libraries_pip_auth.yml@MainHB
+                        parameters:
+                          pip_install_libraries: 'azure-identity==1.23.1 azure-storage-file-datalake==12.13.1 barings-coredataplatform-dbricksAPI --upgrade'
+                          pip_auth_name: 'BaringsPy'
+                      - template: Devops\Templates\Jobs\cli_sp_get_federate_credentials.yml@MainHB
+                        parameters:
+                          azure_subscription: 'EDP ST'
+                          sp_id_var_name: 'ARM_CLIENT_ID'
+                          sp_tenant_var_name: 'ARM_TENANT_ID'
+
+                      - task: PythonScript@0
+                        displayName: 'Run Corporate Market ${{parameters.InputNotebook}}'
+                        inputs:
+                          scriptPath: '$(Agent.BuildDirectory)/azure_utility_scripts/devops/azure_pipelines/run_one_or_more_databricks_sql_files.py'
+                          arguments: '$(WORKSPACE-REGION-URL-ST) $(ARM_TENANT_ID) $(ARM_CLIENT_ID) $(ARM_CLIENT_FEDERATE_ST) $(DATABRICKS-CLUSTERID-ST) "${{parameters.InputNotebook}}" "$(Pipeline.Workspace)/CorporateMarket/DatabricksNotebooks/" "$(Build.BuildId)" "$(is_dir_not_file)" "CorporateMarket" "$(Build.Repository.Name)"'
+                        env:
+                          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+
+      - ${{ if and(not(eq(parameters.ConfigurationItemName, 'None')), eq(parameters.env_selected, 'pr')) }}:
+
+        - template: DeployStages.yml@Dev
+          parameters:
+            releaseStages:
+              - stageType: PPToken
+                dependsOn: Build
+        - stage: PR 
+          dependsOn: PPToken
+          jobs:
+            - deployment: CorporateMarketCR_SNOW
+              environment: CorporateMarketCR_SNOW
+              strategy:
+                runOnce:
+                  deploy:
+                    steps:
+                      - checkout: self
+                        path: CorporateMarket
+                      - checkout: azureUtilityScript
+                        path: azure_utility_scripts
+                      - template: Devops\Templates\Jobs\add_python_and_libraries_pip_auth.yml@MainHB
+                        parameters:
+                          pip_install_libraries: 'azure-identity==1.23.1 azure-storage-file-datalake==12.13.1 barings-coredataplatform-dbricksAPI --upgrade'
+                          pip_auth_name: 'BaringsPy'
+                      - template: Devops\Templates\Jobs\cli_sp_get_federate_credentials.yml@MainHB
+                        parameters:
+                          azure_subscription: 'EDP PR'
+                          sp_id_var_name: 'ARM_CLIENT_ID'
+                          sp_tenant_var_name: 'ARM_TENANT_ID'
+
+                      - task: PythonScript@0
+                        displayName: 'Run Corporate Market ${{parameters.InputNotebook}}'
+                        inputs:
+                          scriptPath: '$(Agent.BuildDirectory)/azure_utility_scripts/devops/azure_pipelines/run_one_or_more_databricks_sql_files.py'
+                          arguments: '$(WORKSPACE-REGION-URL-PR) $(ARM_TENANT_ID) $(ARM_CLIENT_ID) $(ARM_CLIENT_FEDERATE_PR) $(DATABRICKS-CLUSTERID-PR) "${{parameters.InputNotebook}}" "$(Pipeline.Workspace)/CorporateMarket/DatabricksNotebooks/" "$(Build.BuildId)" "$(is_dir_not_file)" "CorporateMarket" "$(Build.Repository.Name)"'
+                        env:
+                          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+        - template: DeployStages.yml@Dev
+          parameters:
+            releaseStages:
+              - stageType: PRComplete
+                dependsOn: PR
+
+              - stageType: Review
+                dependsOn: PRComplete
+              
+              - stageType: Failure
+                dependsOn: ["PR", "PRCompleteTokenGen", "PRComplete", "ReviewTokenGen", "Review"]
+                condition: |
+                  or(
+                    eq(dependencies.PR.result,'Canceled'), 
+                    eq(dependencies.PR.result,'Failed'),
+                    eq(dependencies.PRCompleteTokenGen.result,'Canceled'), 
+                    eq(dependencies.PRCompleteTokenGen.result,'Failed'),  
+                    eq(dependencies.PRComplete.result,'Canceled'), 
+                    eq(dependencies.PRComplete.result,'Failed'),
+                    eq(dependencies.ReviewTokenGen.result,'Canceled'), 
+                    eq(dependencies.ReviewTokenGen.result,'Failed'),  
+                    eq(dependencies.Review.result,'Canceled'), 
+                    eq(dependencies.Review.result,'Failed')
+                  )
