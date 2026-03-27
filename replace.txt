@@ -1,41 +1,104 @@
-def build_query(
-    script_or_query: str,
-    select_columns: str,
-    schema_name: str,
-    entity_name: str,
-    incremental_load_column: str,
-    old_watermark_value: str,
-    new_watermark_value: str
-) -> str:
+import json
+from enum import Enum
+from typing import Optional
+from pydantic import BaseModel, model_validator
+
+
+class AuthType(str, Enum):
+    PASSWORD = "password"
+    PRIVATE_KEY = "private_key"
+
+
+class SnowflakeConnectionConfig(BaseModel):
     """
-    Replaces placeholders in a SQL template with actual parameter values.
-    Replicates the nested @replace logic from ADF.
+    Validates Snowflake connection properties retrieved from Key Vault.
+    """
+    url: str
+    user: str
+    warehouse: str
+    database: str
+    schema: str
+    role: Optional[str] = None
+    auth_type: AuthType
+
+    # For password auth - references the Key Vault secret name holding the password
+    password_secret_name: Optional[str] = None
+
+    # For private key auth - references Key Vault secret names
+    private_key_secret_name: Optional[str] = None
+    private_key_passphrase_secret_name: Optional[str] = None
+
+    @model_validator(mode="after")
+    def validate_auth_fields(self):
+        if self.auth_type == AuthType.PASSWORD:
+            if not self.password_secret_name:
+                raise ValueError(
+                    "password_secret_name is required when auth_type is 'password'."
+                )
+        elif self.auth_type == AuthType.PRIVATE_KEY:
+            if not self.private_key_secret_name:
+                raise ValueError(
+                    "private_key_secret_name is required when auth_type is 'private_key'."
+                )
+        return self
+
+
+def load_snowflake_config(dbutils, config_secret_scope: str, config_secret_key: str) -> SnowflakeConnectionConfig:
+    """
+    Reads the Snowflake connection config JSON from Key Vault via Databricks secrets
+    and validates it against the Pydantic model.
 
     Parameters:
-        script_or_query: SQL template containing placeholders
-        select_columns: Value to replace <SelectColumns>
-        schema_name: Value to replace <SchemaName>
-        entity_name: Value to replace <EntityName>
-        incremental_load_column: Value to replace <IncrementalLoadColumn>
-        old_watermark_value: Value to replace <OldWatermarkValue>
-        new_watermark_value: Value to replace <NewWatermarkValue>
+        dbutils: Databricks utilities
+        config_secret_scope: The Databricks secret scope backed by Key Vault
+        config_secret_key: The secret name containing the JSON config
 
     Returns:
-        str: The fully resolved SQL query
+        SnowflakeConnectionConfig: Validated config object
     """
+    raw_json = dbutils.secrets.get(scope=config_secret_scope, key=config_secret_key)
+    config_dict = json.loads(raw_json)
+    return SnowflakeConnectionConfig(**config_dict)
 
-    replacements = {
-        "<SelectColumns>": select_columns,
-        "<SchemaName>": schema_name,
-        "<EntityName>": entity_name,
-        "<IncrementalLoadColumn>": incremental_load_column,
-        "<OldWatermarkValue>": old_watermark_value,
-        "<NewWatermarkValue>": new_watermark_value
+
+def resolve_snowflake_credentials(dbutils, config: SnowflakeConnectionConfig, secret_scope: str) -> dict:
+    """
+    Takes a validated config and resolves the actual credential values
+    from Key Vault. Returns a dictionary ready to pass to load_from_snowflake.
+
+    Parameters:
+        dbutils: Databricks utilities
+        config: Validated SnowflakeConnectionConfig
+        secret_scope: The Databricks secret scope backed by Key Vault
+
+    Returns:
+        dict: Parameters ready to unpack into load_from_snowflake
+    """
+    params = {
+        "url": config.url,
+        "user": config.user,
+        "warehouse": config.warehouse,
+        "database": config.database,
+        "schema": config.schema,
+        "role": config.role
     }
 
-    query = script_or_query
+    if config.auth_type == AuthType.PASSWORD:
+        params["password"] = dbutils.secrets.get(
+            scope=secret_scope,
+            key=config.password_secret_name
+        )
 
-    for placeholder, value in replacements.items():
-        query = query.replace(placeholder, value)
+    elif config.auth_type == AuthType.PRIVATE_KEY:
+        params["private_key"] = dbutils.secrets.get(
+            scope=secret_scope,
+            key=config.private_key_secret_name
+        )
 
-    return query
+        if config.private_key_passphrase_secret_name:
+            params["private_key_passphrase"] = dbutils.secrets.get(
+                scope=secret_scope,
+                key=config.private_key_passphrase_secret_name
+            )
+
+    return params
