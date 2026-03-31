@@ -1,296 +1,48 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
-resources:
-  repositories:
-    - repository: azureUtilityScript
-      type: git
-      name: Enterprise Data Platform/azure_utility_scripts
-      ref: release/syPipelineUpdates
-    - repository: Dev
-      type: git
-      name: Developer Enablement/Developer Enablement
-      ref: release/1.1
-    - repository: MainHB
-      type: git
-      name: Enterprise Data Platform/FW.Hummingbird
-      ref: release/syPipelineUpdates
+This is a significant upgrade. The big jump is that DBR 17.3 LTS is powered by Apache Spark 4.0.0, while DBR 16.4 LTS runs Spark 3.5.2. Here are the key areas to address.
 
-parameters:
-- name: is_directory
-  displayName: Check If Folder List Ex. ci/configs, sql/Reference
-  type: boolean
-  default: False
+**ANSI SQL Mode Enabled by Default**
 
-- name: InputNotebook
-  displayName: List Of Notebook Paths/Names Without Extension Ex. TestNotebook, TestNotebook1 or ci/configs, sql/Reference
-  type: string
-  default: ''
+This is the single biggest breaking change. The default SQL dialect is now ANSI SQL, which helps protect users from unexpected or incorrect results. In practice this means:
 
-- name: env_selected
-  type: string
-  displayName: Select Environment
-  default: ut
-  values:
-  - ut
-  - st
-  - pr
+- Division by zero now throws an error instead of returning null
+- Invalid casts throw errors instead of returning null (e.g. `CAST('abc' AS INT)` will fail)
+- Overflow on arithmetic operations throws errors instead of wrapping
+- Array index out of bounds throws errors instead of returning null
 
-- name: ConfigurationItemName
-  displayName: Configuration item (Only Required For Prod Release)
-  type: string
-  default: Corporate Market
-  values:
-  - Corporate Market
-  - Core Platform (Humminbird)
+If your SQL notebooks or queries rely on the old permissive behavior, you'll need to either fix the queries or set `spark.sql.ansi.enabled` to `false` — but fixing the queries is the better long-term approach.
 
-- name: AzDoStory
-  displayName: AzDo Work Item ID or Item ID's in a comma seperated list. Can be User Stories, Features, Bugs or Epics. Ex. 320802, 320735, 299620, 7710 or 7710
-  type: string
-  default: '*'
+**input_file_name() Function Removed**
 
-- name: Type
-  displayName: CR Type
-  type: string
-  values:
-  - Application Normal
-  - Application Emergency
-  default: Application Normal
+The `input_file_name` function is no longer supported in Databricks Runtime 17.3 LTS because it is unreliable. Use `_metadata.file_name` instead. If your ingestion framework uses `input_file_name()` to track source files, you'll need to replace every occurrence. The change looks like going from `input_file_name()` to `df.select("_metadata.file_name")`.
 
-- name: UrgencyStatus
-  displayName: Urgency Status
-  type: string
-  values:
-  - Not Urgent
-  - Business Reprioritization
-  - Corrective Maintenance
-  - Inadequate Preparation
-  default: Not Urgent
+**Autoloader Incremental Listing Default Changed**
 
-- name: IncidentNum
-  displayName: Incident Number
-  type: string
-  default: ' '
+The default for the deprecated `cloudFiles.useIncrementalListing` option has changed from `auto` to `false`. Databricks now performs full directory listings instead of incremental listings to prevent skipped files due to non-lexicographic ordering. This is relevant to your ingestion framework. Full directory listings are safer but can be slower on directories with many files. If you were relying on incremental listing for performance, you may want to explicitly set it or verify your pipeline performance after the upgrade.
 
-- name: TitleStart
-  displayName: Short Description
-  type: string
-  default: '*'
+**Scala — Only 2.13 Supported**
 
-- name: Description
-  displayName: Description
-  type: string
-  default: '*'
+Starting with Databricks Runtime 17, only Scala 2.13 will be supported. Since you're already on DBR 16.4 with Scala 2.13, you should be in good shape here. But if you have any JARs or libraries compiled against Scala 2.12, they'll need to be recompiled. Collections will be the primary source of incompatibilities, particularly with API parameters and return types.
 
-- name: StartTime
-  displayName: "Start Time yyyy-MM-dd H:mm EST Ex. 2024-03-31 7:30"
-  type: string
-  default: ' '
+**PySpark Minimum Library Versions**
 
-- name: Justification
-  type: string
-  displayName: Justification
-  default: '*'
+In Spark 4.0, Python 3.8 support was dropped. The minimum Pandas version was raised to 2.0.0, minimum NumPy to 1.21, and minimum PyArrow to 11.0.0. Check your cluster init scripts and any library installs to make sure you're not pinning older versions. Also note that `DataFrame.iteritems`, `DataFrame.append`, `Series.iteritems`, and `Series.append` have been removed from pandas API on Spark — use `DataFrame.items` and `ps.concat` instead.
 
-name: Corporate_Market_Release_For_$(Build.RequestedFor)_On_$(Date:yyyyMMdd)
+**Parquet Datetime Rebasing Configs Renamed**
 
-trigger:
-- None
+The legacy datetime rebasing SQL configs with the `spark.sql.legacy` prefix are removed. You must use the new config names like `spark.sql.parquet.int96RebaseModeInWrite` instead of `spark.sql.legacy.parquet.int96RebaseModeInWrite`. If you have any of these set in cluster configs or notebooks, update the names.
 
-pool:  'DevOpsWindows'
+**JDBC Data Type Mapping Changes**
 
-variables:
-  - name: ApprovalStage
-    value: PPToken
-  - name: PRStage
-    value: PR
-  - name: ReviewStage
-    value: ReviewTokenGen
-  - ${{if eq(parameters.ConfigurationItemName, 'None')}}:
-    - name: ConfigurationItem
-      value: ''
-  - ${{if eq(parameters.ConfigurationItemName, 'Core Platform (Humminbird)')}}:
-    - name: ConfigurationItem
-      value: '527546a8933e4e10facff7fe3bba1050'
-  - ${{if eq(parameters.ConfigurationItemName, 'Corporate Market')}}:
-    - name: ConfigurationItem
-      value: '92119835fbbf361078a9fd528eefdc0c'
-  - name: ImplementationPlan
-    value: 'DevOps Pipeline'
-  - name: Title
-    value: ${{ format('{0} - AzdDo Story {1}', parameters.TitleStart, parameters.AzDoStory) }}
-  - name: BackoutPlan
-    value: 'Reverting to previous working version.'
-  - name: ChangeNumber
-    value: ' '
-  - name: Priority
-    value: 5
-  - name: LastPipeline
-    value: true
-  - name: TestPlan
-    value: 'Upon completion of the change, execute report or run a query and have stakeholders validate that updates in the description have been successfully implemented.'
-  - ${{ if eq(parameters.is_directory, True) }}:
-      - name: is_dir_not_file
-        value: 1
-  - ${{ if eq(parameters.is_directory, False) }}:
-      - name: is_dir_not_file
-        value: 0
+If you're using JDBC connections (relevant if your Snowflake connector ever falls back to JDBC), be aware that Spark 4.0 changes type mappings for MySQL, Postgres, Oracle, and MSSQL — including how timestamps, integers, and floats are read and written. For your Snowflake Spark connector work specifically, test that data types come through as expected.
 
-  - ${{ each parm in parameters }}:
-      - name: ${{ parm.key }}
-        value: ${{ parm.value }}
+**Structured Streaming Changes**
 
+`Trigger.Once` is deprecated, and users are encouraged to migrate to `Trigger.AvailableNow`. If your Autoloader pipelines use `trigger(once=True)`, switch to `trigger(availableNow=True)`.
 
-lockBehavior: sequential
-extends:
-  template: Base.yml@Dev
-  parameters:
-    SonarServiceConnection: sonarqube.baringsapps.com
-    SonarProjectKey: Corporate-Market-CR
-    SonarScannerMode: CLI
-    SonarProperties: |
-      sonar.projectKey=Corporate-Market-CR
-    buildSteps: 
-      - ${{ if and(not(eq(parameters.ConfigurationItemName, 'None')), eq(parameters.env_selected, 'pr')) }}:
-        - template: Devops\Templates\Jobs\snow_validation_devops.yml@MainHB
-          parameters:
-            configuration_item_pairs: '$(configuration_item_pairs)'
-            incident_num: '${{parameters.IncidentNum}}'
-            selected_configuration_item_name: '${{parameters.ConfigurationItemName}}'
-            cr_type: '${{parameters.Type}}'
-            cr_title: '${{parameters.TitleStart}}'
-            cr_desc: '${{parameters.Description}}'
-            cr_urgent: 'true'
-            cr_reason: '${{parameters.UrgencyStatus}}'
-            start_time: '${{parameters.StartTime}}'
-            justification: '${{parameters.Justification}}'
-            implementation_plan: '$(ImplementationPlan)'
-            risk_impact_analysis: 'Not needed'
-            backout_plan: '$(BackoutPlan)'
-            azdo_story_num: '${{parameters.AzDoStory}}'
-    deployStages:
-      - ${{ if or(eq(parameters.env_selected, 'ut'), and(not(eq(parameters.ConfigurationItemName, 'None')), not(eq(parameters.env_selected, 'pr')))) }}:
-        - stage: UT
-          jobs:
-            - deployment: CorporateMarketCR_UT
-              environment: CorporateMarketCR_UT
-              strategy:
-                runOnce:
-                  deploy:
-                    steps:
-                      - checkout: self
-                        path: CorporateMarket
-                      - checkout: azureUtilityScript
-                        path: azure_utility_scripts
-                      - template: Devops\Templates\Jobs\add_python_and_libraries_pip_auth.yml@MainHB
-                        parameters:
-                          pip_install_libraries: 'azure-identity==1.23.1 azure-storage-file-datalake==12.13.1 barings-coredataplatform-dbricksAPI --upgrade'
-                          pip_auth_name: 'BaringsPy'
-                      - template: Devops\Templates\Jobs\cli_sp_get_federate_credentials.yml@MainHB
-                        parameters:
-                          azure_subscription: 'EDP UT'
-                          sp_id_var_name: 'ARM_CLIENT_ID'
-                          sp_tenant_var_name: 'ARM_TENANT_ID'
+**Delta Lake MERGE API Returns DataFrame**
 
-                      - task: PythonScript@0
-                        displayName: 'Run Corporate Market ${{parameters.InputNotebook}}'
-                        inputs:
-                          scriptPath: '$(Agent.BuildDirectory)/azure_utility_scripts/devops/azure_pipelines/run_one_or_more_databricks_sql_files.py'
-                          arguments: '$(WORKSPACE-REGION-URL-UT) $(ARM_TENANT_ID) $(ARM_CLIENT_ID) $(ARM_CLIENT_FEDERATE_UT) $(DATABRICKS-CLUSTERID-UT) "${{parameters.InputNotebook}}" "$(Pipeline.Workspace)/CorporateMarket/DatabricksNotebooks/" "$(Build.BuildId)" "$(is_dir_not_file)" "CorporateMarket" "$(Build.Repository.Name)"'
-                        env:
-                          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+The Scala and Python MERGE APIs like DeltaMergeBuilder now return a DataFrame like the SQL API does. If you have code that doesn't expect a return value from `.execute()`, this shouldn't break anything, but it's worth noting for testing.
 
-      - ${{ if or(eq(parameters.env_selected, 'st'), and(not(eq(parameters.ConfigurationItemName, 'None')), not(eq(parameters.env_selected, 'pr')))) }}:
-        - stage: ST
-          # dependsOn: UT
-          jobs:
-            - deployment: CorporateMarketCR_ST
-              environment: CorporateMarketCR_ST
-              strategy:
-                runOnce:
-                  deploy:
-                    steps:
-                      - checkout: self
-                        path: CorporateMarket
-                      - checkout: azureUtilityScript
-                        path: azure_utility_scripts
-                      - template: Devops\Templates\Jobs\add_python_and_libraries_pip_auth.yml@MainHB
-                        parameters:
-                          pip_install_libraries: 'azure-identity==1.23.1 azure-storage-file-datalake==12.13.1 barings-coredataplatform-dbricksAPI --upgrade'
-                          pip_auth_name: 'BaringsPy'
-                      - template: Devops\Templates\Jobs\cli_sp_get_federate_credentials.yml@MainHB
-                        parameters:
-                          azure_subscription: 'EDP ST'
-                          sp_id_var_name: 'ARM_CLIENT_ID'
-                          sp_tenant_var_name: 'ARM_TENANT_ID'
+**Recommended Migration Approach**
 
-                      - task: PythonScript@0
-                        displayName: 'Run Corporate Market ${{parameters.InputNotebook}}'
-                        inputs:
-                          scriptPath: '$(Agent.BuildDirectory)/azure_utility_scripts/devops/azure_pipelines/run_one_or_more_databricks_sql_files.py'
-                          arguments: '$(WORKSPACE-REGION-URL-ST) $(ARM_TENANT_ID) $(ARM_CLIENT_ID) $(ARM_CLIENT_FEDERATE_ST) $(DATABRICKS-CLUSTERID-ST) "${{parameters.InputNotebook}}" "$(Pipeline.Workspace)/CorporateMarket/DatabricksNotebooks/" "$(Build.BuildId)" "$(is_dir_not_file)" "CorporateMarket" "$(Build.Repository.Name)"'
-                        env:
-                          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
-
-      - ${{ if and(not(eq(parameters.ConfigurationItemName, 'None')), eq(parameters.env_selected, 'pr')) }}:
-
-        - template: DeployStages.yml@Dev
-          parameters:
-            releaseStages:
-              - stageType: PPToken
-                dependsOn: Build
-        - stage: PR 
-          dependsOn: PPToken
-          jobs:
-            - deployment: CorporateMarketCR_SNOW
-              environment: CorporateMarketCR_SNOW
-              strategy:
-                runOnce:
-                  deploy:
-                    steps:
-                      - checkout: self
-                        path: CorporateMarket
-                      - checkout: azureUtilityScript
-                        path: azure_utility_scripts
-                      - template: Devops\Templates\Jobs\add_python_and_libraries_pip_auth.yml@MainHB
-                        parameters:
-                          pip_install_libraries: 'azure-identity==1.23.1 azure-storage-file-datalake==12.13.1 barings-coredataplatform-dbricksAPI --upgrade'
-                          pip_auth_name: 'BaringsPy'
-                      - template: Devops\Templates\Jobs\cli_sp_get_federate_credentials.yml@MainHB
-                        parameters:
-                          azure_subscription: 'EDP PR'
-                          sp_id_var_name: 'ARM_CLIENT_ID'
-                          sp_tenant_var_name: 'ARM_TENANT_ID'
-
-                      - task: PythonScript@0
-                        displayName: 'Run Corporate Market ${{parameters.InputNotebook}}'
-                        inputs:
-                          scriptPath: '$(Agent.BuildDirectory)/azure_utility_scripts/devops/azure_pipelines/run_one_or_more_databricks_sql_files.py'
-                          arguments: '$(WORKSPACE-REGION-URL-PR) $(ARM_TENANT_ID) $(ARM_CLIENT_ID) $(ARM_CLIENT_FEDERATE_PR) $(DATABRICKS-CLUSTERID-PR) "${{parameters.InputNotebook}}" "$(Pipeline.Workspace)/CorporateMarket/DatabricksNotebooks/" "$(Build.BuildId)" "$(is_dir_not_file)" "CorporateMarket" "$(Build.Repository.Name)"'
-                        env:
-                          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
-        - template: DeployStages.yml@Dev
-          parameters:
-            releaseStages:
-              - stageType: PRComplete
-                dependsOn: PR
-
-              - stageType: Review
-                dependsOn: PRComplete
-              
-              - stageType: Failure
-                dependsOn: ["PR", "PRCompleteTokenGen", "PRComplete", "ReviewTokenGen", "Review"]
-                condition: |
-                  or(
-                    eq(dependencies.PR.result,'Canceled'), 
-                    eq(dependencies.PR.result,'Failed'),
-                    eq(dependencies.PRCompleteTokenGen.result,'Canceled'), 
-                    eq(dependencies.PRCompleteTokenGen.result,'Failed'),  
-                    eq(dependencies.PRComplete.result,'Canceled'), 
-                    eq(dependencies.PRComplete.result,'Failed'),
-                    eq(dependencies.ReviewTokenGen.result,'Canceled'), 
-                    eq(dependencies.ReviewTokenGen.result,'Failed'),  
-                    eq(dependencies.Review.result,'Canceled'), 
-                    eq(dependencies.Review.result,'Failed')
-                  )
+Start by spinning up a test cluster on DBR 17.3 LTS and running your most critical notebooks against it. Focus on anything that does arithmetic, casting, or array operations in SQL since ANSI mode will surface those first. Search your codebase for `input_file_name`, `Trigger.Once`, any `spark.sql.legacy` configs, and pinned library versions. Test your Autoloader pipelines to validate performance with full directory listings. Since your framework is primarily Python-based, the Scala changes should be less impactful, but check any JAR dependencies on your clusters.
