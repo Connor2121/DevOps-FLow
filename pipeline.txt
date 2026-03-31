@@ -1,48 +1,17 @@
-This is a significant upgrade. The big jump is that DBR 17.3 LTS is powered by Apache Spark 4.0.0, while DBR 16.4 LTS runs Spark 3.5.2. Here are the key areas to address.
+The change from `auto` to `false` for `cloudFiles.useIncrementalListing` matters because it changes how Autoloader discovers new files in your landing directory.
 
-**ANSI SQL Mode Enabled by Default**
+**What incremental listing did**
 
-This is the single biggest breaking change. The default SQL dialect is now ANSI SQL, which helps protect users from unexpected or incorrect results. In practice this means:
+With incremental listing enabled, Autoloader would remember the last file it saw (lexicographically) and only list files that come after it in the directory. This was fast because it avoided listing the entire directory every time — it just looked for files newer than the last known file.
 
-- Division by zero now throws an error instead of returning null
-- Invalid casts throw errors instead of returning null (e.g. `CAST('abc' AS INT)` will fail)
-- Overflow on arithmetic operations throws errors instead of wrapping
-- Array index out of bounds throws errors instead of returning null
+**Why it was a problem**
 
-If your SQL notebooks or queries rely on the old permissive behavior, you'll need to either fix the queries or set `spark.sql.ansi.enabled` to `false` — but fixing the queries is the better long-term approach.
+The issue is that it assumed file names are ordered lexicographically in a way that matches their arrival order. Databricks now performs full directory listings instead of incremental listings to prevent skipped files due to non-lexicographic ordering. For example, `10-01-2025.csv` comes before `8-01-2025.csv` lexicographically.
 
-**input_file_name() Function Removed**
+So if a file named `8-01-2025.csv` landed after `10-01-2025.csv` was already processed, incremental listing would never see it because lexicographically `8` comes after `10` (since string comparison starts with the first character). The file would be silently skipped with no error.
 
-The `input_file_name` function is no longer supported in Databricks Runtime 17.3 LTS because it is unreliable. Use `_metadata.file_name` instead. If your ingestion framework uses `input_file_name()` to track source files, you'll need to replace every occurrence. The change looks like going from `input_file_name()` to `df.select("_metadata.file_name")`.
+**What this means for your framework**
 
-**Autoloader Incremental Listing Default Changed**
+With the default now set to `false`, Autoloader will do a full directory listing every trigger. This is safer because it guarantees no files get missed regardless of naming convention. The tradeoff is performance — full listings are slower on directories with thousands of files because it has to list everything and compare against the checkpoint.
 
-The default for the deprecated `cloudFiles.useIncrementalListing` option has changed from `auto` to `false`. Databricks now performs full directory listings instead of incremental listings to prevent skipped files due to non-lexicographic ordering. This is relevant to your ingestion framework. Full directory listings are safer but can be slower on directories with many files. If you were relying on incremental listing for performance, you may want to explicitly set it or verify your pipeline performance after the upgrade.
-
-**Scala — Only 2.13 Supported**
-
-Starting with Databricks Runtime 17, only Scala 2.13 will be supported. Since you're already on DBR 16.4 with Scala 2.13, you should be in good shape here. But if you have any JARs or libraries compiled against Scala 2.12, they'll need to be recompiled. Collections will be the primary source of incompatibilities, particularly with API parameters and return types.
-
-**PySpark Minimum Library Versions**
-
-In Spark 4.0, Python 3.8 support was dropped. The minimum Pandas version was raised to 2.0.0, minimum NumPy to 1.21, and minimum PyArrow to 11.0.0. Check your cluster init scripts and any library installs to make sure you're not pinning older versions. Also note that `DataFrame.iteritems`, `DataFrame.append`, `Series.iteritems`, and `Series.append` have been removed from pandas API on Spark — use `DataFrame.items` and `ps.concat` instead.
-
-**Parquet Datetime Rebasing Configs Renamed**
-
-The legacy datetime rebasing SQL configs with the `spark.sql.legacy` prefix are removed. You must use the new config names like `spark.sql.parquet.int96RebaseModeInWrite` instead of `spark.sql.legacy.parquet.int96RebaseModeInWrite`. If you have any of these set in cluster configs or notebooks, update the names.
-
-**JDBC Data Type Mapping Changes**
-
-If you're using JDBC connections (relevant if your Snowflake connector ever falls back to JDBC), be aware that Spark 4.0 changes type mappings for MySQL, Postgres, Oracle, and MSSQL — including how timestamps, integers, and floats are read and written. For your Snowflake Spark connector work specifically, test that data types come through as expected.
-
-**Structured Streaming Changes**
-
-`Trigger.Once` is deprecated, and users are encouraged to migrate to `Trigger.AvailableNow`. If your Autoloader pipelines use `trigger(once=True)`, switch to `trigger(availableNow=True)`.
-
-**Delta Lake MERGE API Returns DataFrame**
-
-The Scala and Python MERGE APIs like DeltaMergeBuilder now return a DataFrame like the SQL API does. If you have code that doesn't expect a return value from `.execute()`, this shouldn't break anything, but it's worth noting for testing.
-
-**Recommended Migration Approach**
-
-Start by spinning up a test cluster on DBR 17.3 LTS and running your most critical notebooks against it. Focus on anything that does arithmetic, casting, or array operations in SQL since ANSI mode will surface those first. Search your codebase for `input_file_name`, `Trigger.Once`, any `spark.sql.legacy` configs, and pinned library versions. Test your Autoloader pipelines to validate performance with full directory listings. Since your framework is primarily Python-based, the Scala changes should be less impactful, but check any JAR dependencies on your clusters.
+For your ingestion framework specifically, if your landing directories are small to moderate in size, you probably won't notice a difference. If you have directories with very large numbers of files, you might see slightly longer trigger times. In that case you could consider archiving or moving processed files out of the landing zone to keep the directory size manageable, rather than re-enabling incremental listing and risking skipped files.
