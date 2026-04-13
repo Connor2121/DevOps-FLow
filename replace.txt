@@ -1,104 +1,21 @@
-import json
-from enum import Enum
-from typing import Optional
-from pydantic import BaseModel, model_validator
+def generate_sharepoint_online_auth(dbutils: IDBUtils) -> Dict[str, str]:
+    credential = ClientSecretCredential(
+        tenant_id=get_secrets(dbutils, "barings-tenant-id", "kv-datahub"),
+        client_id=get_secrets(dbutils, "sharepointClientId", "kv-datahub"),
+        client_secret=get_secrets(dbutils, "sharepointClientSecret", "kv-datahub"),
+    )
+    oauth_token = credential.get_token("https://test.sharepoint.com/.default").token
 
-
-class AuthType(str, Enum):
-    PASSWORD = "password"
-    PRIVATE_KEY = "private_key"
-
-
-class SnowflakeConnectionConfig(BaseModel):
-    """
-    Validates Snowflake connection properties retrieved from Key Vault.
-    """
-    url: str
-    user: str
-    warehouse: str
-    database: str
-    schema: str
-    role: Optional[str] = None
-    auth_type: AuthType
-
-    # For password auth - references the Key Vault secret name holding the password
-    password_secret_name: Optional[str] = None
-
-    # For private key auth - references Key Vault secret names
-    private_key_secret_name: Optional[str] = None
-    private_key_passphrase_secret_name: Optional[str] = None
-
-    @model_validator(mode="after")
-    def validate_auth_fields(self):
-        if self.auth_type == AuthType.PASSWORD:
-            if not self.password_secret_name:
-                raise ValueError(
-                    "password_secret_name is required when auth_type is 'password'."
-                )
-        elif self.auth_type == AuthType.PRIVATE_KEY:
-            if not self.private_key_secret_name:
-                raise ValueError(
-                    "private_key_secret_name is required when auth_type is 'private_key'."
-                )
-        return self
-
-
-def load_snowflake_config(dbutils, config_secret_scope: str, config_secret_key: str) -> SnowflakeConnectionConfig:
-    """
-    Reads the Snowflake connection config JSON from Key Vault via Databricks secrets
-    and validates it against the Pydantic model.
-
-    Parameters:
-        dbutils: Databricks utilities
-        config_secret_scope: The Databricks secret scope backed by Key Vault
-        config_secret_key: The secret name containing the JSON config
-
-    Returns:
-        SnowflakeConnectionConfig: Validated config object
-    """
-    raw_json = dbutils.secrets.get(scope=config_secret_scope, key=config_secret_key)
-    config_dict = json.loads(raw_json)
-    return SnowflakeConnectionConfig(**config_dict)
-
-
-def resolve_snowflake_credentials(dbutils, config: SnowflakeConnectionConfig, secret_scope: str) -> dict:
-    """
-    Takes a validated config and resolves the actual credential values
-    from Key Vault. Returns a dictionary ready to pass to load_from_snowflake.
-
-    Parameters:
-        dbutils: Databricks utilities
-        config: Validated SnowflakeConnectionConfig
-        secret_scope: The Databricks secret scope backed by Key Vault
-
-    Returns:
-        dict: Parameters ready to unpack into load_from_snowflake
-    """
-    params = {
-        "url": config.url,
-        "user": config.user,
-        "warehouse": config.warehouse,
-        "database": config.database,
-        "schema": config.schema,
-        "role": config.role
+    headers = {
+        "Authorization": "Bearer " + oauth_token,
+        "Accept": "application/json;odata=verbose",
+        "Content-Type": "application/json;odata=verbose",
     }
 
-    if config.auth_type == AuthType.PASSWORD:
-        params["password"] = dbutils.secrets.get(
-            scope=secret_scope,
-            key=config.password_secret_name
-        )
+    return headers
 
-    elif config.auth_type == AuthType.PRIVATE_KEY:
-        params["private_key"] = dbutils.secrets.get(
-            scope=secret_scope,
-            key=config.private_key_secret_name
-        )
+url = https://barings.sharepoint.com/sites/FinanceLoan/test22/_api/web/GetFolderByServerRelativeUrl('/sites/FinanceLoan/test22/Shared Documents')/Files/add(url='196191_10148_Peachtree Dunwoody Pavilion_BU_December 2026_20260410T220555_20260410T230016.pdf',overwrite=true)
 
-        if config.private_key_passphrase_secret_name:
-            params["private_key_passphrase"] = dbutils.secrets.get(
-                scope=secret_scope,
-                key=config.private_key_passphrase_secret_name
-            )
-
-    return params
+postFile2 = requests.post(
+    url, headers=headers, auth=None, data=file.read(), timeout=1000000
+)
