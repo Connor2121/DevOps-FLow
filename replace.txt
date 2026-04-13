@@ -14,7 +14,7 @@ def generate_sharepoint_online_auth(dbutils: IDBUtils) -> Dict[str, str]:
 
     return headers
 
-url = https://barings.sharepoint.com/sites/FinanceLoan/test22/_api/web/GetFolderByServerRelativeUrl('/sites/FinanceLoan/test22/Shared Documents')/Files/add(url='196191_10148_Peachtree Dunwoody Pavilion_BU_December 2026_20260410T220555_20260410T230016.pdf',overwrite=true)
+url = https://test.sharepoint.com/sites/FinanceLoan/test22/_api/web/GetFolderByServerRelativeUrl('/sites/FinanceLoan/test22/Shared Documents')/Files/add(url='test.pdf',overwrite=true)
 
 postFile2 = requests.post(
     url, headers=headers, auth=None, data=file.read(), timeout=1000000
