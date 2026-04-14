@@ -1,17 +1,14 @@
-The change from `auto` to `false` for `cloudFiles.useIncrementalListing` matters because it changes how Autoloader discovers new files in your landing directory.
+headers = {
+    "Authorization": f"Bearer {token.token}",
+    "Content-Type": "application/octet-stream"
+}
 
-**What incremental listing did**
+TENANT    = "test"
+SITE_PATH = "sites/FinanceLoan/test22"
+FILENAME  = "test.pdf"
 
-With incremental listing enabled, Autoloader would remember the last file it saw (lexicographically) and only list files that come after it in the directory. This was fast because it avoided listing the entire directory every time — it just looked for files newer than the last known file.
-
-**Why it was a problem**
-
-The issue is that it assumed file names are ordered lexicographically in a way that matches their arrival order. Databricks now performs full directory listings instead of incremental listings to prevent skipped files due to non-lexicographic ordering. For example, `10-01-2025.csv` comes before `8-01-2025.csv` lexicographically.
-
-So if a file named `8-01-2025.csv` landed after `10-01-2025.csv` was already processed, incremental listing would never see it because lexicographically `8` comes after `10` (since string comparison starts with the first character). The file would be silently skipped with no error.
-
-**What this means for your framework**
-
-With the default now set to `false`, Autoloader will do a full directory listing every trigger. This is safer because it guarantees no files get missed regardless of naming convention. The tradeoff is performance — full listings are slower on directories with thousands of files because it has to list everything and compare against the checkpoint.
-
-For your ingestion framework specifically, if your landing directories are small to moderate in size, you probably won't notice a difference. If you have directories with very large numbers of files, you might see slightly longer trigger times. In that case you could consider archiving or moving processed files out of the landing zone to keep the directory size manageable, rather than re-enabling incremental listing and risking skipped files.
+# Step 1 — get the drive ID for "Shared Documents"
+drives_response = requests.get(
+    f"https://graph.microsoft.com/v1.0/sites/{TENANT}.sharepoint.com:/{SITE_PATH}:/drives",
+    headers=headers
+)
