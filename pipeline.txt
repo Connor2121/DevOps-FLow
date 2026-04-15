@@ -19,3 +19,6 @@ Write-Output $pfxB64
 $pfxB64 | Set-Clipboard
 
 https://learn.microsoft.com/en-us/entra/identity-platform/howto-create-self-signed-certificate
+
+
+I am using the following link to cenerate a certificate and provate key combo to upload to my Azure App Registration.  I am then going to use the private key and the CertificateCredential to generate a token to use when calling the Sharepoint API.  Please walk me through the steps>  https://learn.microsoft.com/en-us/entra/identity-platform/howto-create-self-signed-certificate
