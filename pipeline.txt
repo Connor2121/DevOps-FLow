@@ -17,3 +17,5 @@ Write-Output $pfxB64
 
 # Or copy directly to clipboard
 $pfxB64 | Set-Clipboard
+
+https://learn.microsoft.com/en-us/entra/identity-platform/howto-create-self-signed-certificate
