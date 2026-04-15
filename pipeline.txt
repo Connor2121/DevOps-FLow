@@ -1,22 +1,9 @@
-"callSeq": [
-        {
-            "apiCommand": "/sites/FinanceLoan/test22/_api/web/webs/add",
-            "callType": "POST"
-        },
-        {
-            "apiCommand": "/sites/FinanceLoan/test22/_api/web/GetFolderByServerRelativeUrl('/sites/FinanceLoan/test22/Shared Documents')/Files/add(url='FILE_NAME',overwrite=true)",
-            "callType": "POST"
-        },
-        {
-            "apiCommand": "/sites/FinanceLoan/test22/_api/web/GetFileByServerRelativeUrl('/sites/FinanceLoan/test22/Shared Documents/FILE_NAME')/ListItemAllFields",
-            "callType": "POST"
-        },
-        {
-            "apiCommand": "/sites/FinanceLoan/test22/_api/web/GetFileByServerRelativeUrl('/sites/FinanceLoan/test22/Shared Documents/FILE_NAME')/ListItemAllFields",
-            "callType": "POST"
-        },
-        {
-            "apiCommand": "/sites/FinanceLoan/test22/_api/web/GetFileByServerRelativeUrl('/sites/FinanceLoan/test22/Shared Documents/FILE_NAME')/CheckIn(comment='Checked in by DataPlatform',checkintype=0)",
-            "callType": "POST"
-        }
-    ]
+$cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2(
+    "C:\path\to\combined.pfx", 
+    $password
+)
+
+# If this prints details, the PFX is valid
+Write-Output $cert.Subject
+Write-Output $cert.Thumbprint
+Write-Output $cert.NotAfter
