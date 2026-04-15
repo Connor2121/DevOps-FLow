@@ -1,14 +1,22 @@
-headers = {
-    "Authorization": f"Bearer {token.token}",
-    "Content-Type": "application/octet-stream"
-}
-
-TENANT    = "test"
-SITE_PATH = "sites/FinanceLoan/test22"
-FILENAME  = "test.pdf"
-
-# Step 1 — get the drive ID for "Shared Documents"
-drives_response = requests.get(
-    f"https://graph.microsoft.com/v1.0/sites/{TENANT}.sharepoint.com:/{SITE_PATH}:/drives",
-    headers=headers
-)
+"callSeq": [
+        {
+            "apiCommand": "/sites/FinanceLoan/test22/_api/web/webs/add",
+            "callType": "POST"
+        },
+        {
+            "apiCommand": "/sites/FinanceLoan/test22/_api/web/GetFolderByServerRelativeUrl('/sites/FinanceLoan/test22/Shared Documents')/Files/add(url='FILE_NAME',overwrite=true)",
+            "callType": "POST"
+        },
+        {
+            "apiCommand": "/sites/FinanceLoan/test22/_api/web/GetFileByServerRelativeUrl('/sites/FinanceLoan/test22/Shared Documents/FILE_NAME')/ListItemAllFields",
+            "callType": "POST"
+        },
+        {
+            "apiCommand": "/sites/FinanceLoan/test22/_api/web/GetFileByServerRelativeUrl('/sites/FinanceLoan/test22/Shared Documents/FILE_NAME')/ListItemAllFields",
+            "callType": "POST"
+        },
+        {
+            "apiCommand": "/sites/FinanceLoan/test22/_api/web/GetFileByServerRelativeUrl('/sites/FinanceLoan/test22/Shared Documents/FILE_NAME')/CheckIn(comment='Checked in by DataPlatform',checkintype=0)",
+            "callType": "POST"
+        }
+    ]
