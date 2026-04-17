@@ -1,1 +1,29 @@
 Failed to execute script. Exception: ''Type=Microsoft.DataTransfer.Common.Shared.HybridDeliveryException,Message=Failed to execute the query command during read operation.,Source=Microsoft.DataTransfer.Execution.ScriptActivityExecutor,''Type=Apache.Arrow.Adbc.C.CAdbcDriverImporter+ImportedAdbcException,Message=[Snowflake] 090106 (22000): Cannot perform STAGE PUT. This session does not have a current schema. Call 'USE SCHEMA', or use a qualified name.,Source=Apache.Arrow.Adbc,''
+
+
+"resultSets": [
+		{
+			"rowCount": 1,
+			"rows": [
+				{
+					"multiple statement execution": "Multiple statements executed successfully."
+				}
+			]
+		}
+	],
+
+"resultSets": [
+		{
+			"rowCount": 1,
+			"rows": [
+				{
+					"rows_unloaded": "1020902",
+					"input_bytes": "167146352",
+					"output_bytes": "167146352"
+				}
+			]
+		}
+	]
+
+
+"USE SCHEMA INVESTMENTS; COPY INTO '@ext_stage/Internal/SQL/adc/con_test/investments/reference_list_item/2026/4/16/_con_test_investments_reference_list_item_2026-04-16T20:38:25/_con_test_investments_reference_list_item_2026-04-16T20:38:25' FROM (SELECT * FROM INVESTMENTS.DECODE) FILE_FORMAT = (type = PARQUET COMPRESSION = SNAPPY) HEADER = TRUE SINGLE = FALSE OVERWRITE = TRUE"
