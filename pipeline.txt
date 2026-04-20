@@ -1,24 +1,2 @@
-$cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2(
-    "C:\path\to\combined.pfx", 
-    $password
-)
-
-# If this prints details, the PFX is valid
-Write-Output $cert.Subject
-Write-Output $cert.Thumbprint
-Write-Output $cert.NotAfter
-
-
-$pfxBytes = [System.IO.File]::ReadAllBytes("C:\path\to\combined.pfx")
-$pfxB64 = [Convert]::ToBase64String($pfxBytes)
-
-# View it
-Write-Output $pfxB64
-
-# Or copy directly to clipboard
-$pfxB64 | Set-Clipboard
-
-https://learn.microsoft.com/en-us/entra/identity-platform/howto-create-self-signed-certificate
-
-
-I am using the following link to cenerate a certificate and provate key combo to upload to my Azure App Registration.  I am then going to use the private key and the CertificateCredential to generate a token to use when calling the Sharepoint API.  Please walk me through the steps>  https://learn.microsoft.com/en-us/entra/identity-platform/howto-create-self-signed-certificate
+https://docs.snowflake.com/en/user-guide/spark-connector-overview
+https://docs.snowflake.com/en/user-guide/security-encryption-end-to-end
