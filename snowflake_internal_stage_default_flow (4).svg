@@ -1,0 +1,143 @@
+<svg width="100%" viewBox="0 0 680 800" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>Snowflake on Azure — default internal stage flow for Databricks Spark connector</title>
+<desc>Diagram showing Spark reading from Snowflake via the default internal stage, which is a temporary named stage backed by a dedicated Snowflake-owned Azure storage account, accessed by Spark executors over public TLS using SAS tokens</desc>
+<defs>
+<style>
+  .t { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; font-weight: 400; fill: #3d3d3a; }
+  .ts { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 12px; font-weight: 400; fill: #73726c; }
+  .th { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; font-weight: 500; fill: #3d3d3a; }
+  .c-blue rect { fill: #E6F1FB; stroke: #185FA5; }
+  .c-blue text { fill: #0C447C; }
+  .c-purple rect { fill: #EEEDFE; stroke: #534AB7; }
+  .c-purple text { fill: #3C3489; }
+  .c-teal rect { fill: #E1F5EE; stroke: #0F6E56; }
+  .c-teal text { fill: #085041; }
+  .c-coral rect { fill: #FAECE7; stroke: #993C1D; }
+  .c-coral text { fill: #712B13; }
+  .c-gray rect { fill: #F1EFE8; stroke: #5F5E5A; }
+  .c-gray text { fill: #444441; }
+  .arr { stroke: #73726c; stroke-width: 1.5; fill: none; }
+</style>
+<marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+</defs>
+
+<!-- Customer network boundary -->
+<rect x="20" y="30" width="320" height="300" rx="20" fill="none" stroke="#185FA5" stroke-width="1" stroke-dasharray="6 4" opacity="0.6"/>
+<text class="th" x="40" y="55" dominant-baseline="central" fill="#185FA5">Your Azure network boundary</text>
+
+<!-- Snowflake Azure subscription boundary -->
+<rect x="360" y="30" width="300" height="600" rx="20" fill="none" stroke="#993C1D" stroke-width="1" stroke-dasharray="6 4" opacity="0.6"/>
+<text class="th" x="380" y="55" dominant-baseline="central" fill="#993C1D">Snowflake's Azure subscription</text>
+<text class="ts" x="380" y="73" dominant-baseline="central" fill="#993C1D">Same region as your Snowflake account</text>
+
+<!-- Databricks cluster -->
+<g class="c-blue">
+<rect x="40" y="85" width="280" height="220" rx="14" stroke-width="0.5"/>
+<text class="th" x="180" y="108" text-anchor="middle" dominant-baseline="central">Databricks cluster</text>
+</g>
+
+<g class="c-purple">
+<rect x="60" y="130" width="240" height="58" rx="8" stroke-width="0.5"/>
+<text class="th" x="180" y="150" text-anchor="middle" dominant-baseline="central">Spark driver</text>
+<text class="ts" x="180" y="170" text-anchor="middle" dominant-baseline="central">Opens JDBC, creates stage</text>
+</g>
+
+<g class="c-teal">
+<rect x="60" y="205" width="72" height="80" rx="8" stroke-width="0.5"/>
+<text class="th" x="96" y="225" text-anchor="middle" dominant-baseline="central">Exec 1</text>
+<text class="ts" x="96" y="244" text-anchor="middle" dominant-baseline="central">reads with</text>
+<text class="ts" x="96" y="261" text-anchor="middle" dominant-baseline="central">SAS token</text>
+</g>
+<g class="c-teal">
+<rect x="144" y="205" width="72" height="80" rx="8" stroke-width="0.5"/>
+<text class="th" x="180" y="225" text-anchor="middle" dominant-baseline="central">Exec 2</text>
+<text class="ts" x="180" y="244" text-anchor="middle" dominant-baseline="central">reads with</text>
+<text class="ts" x="180" y="261" text-anchor="middle" dominant-baseline="central">SAS token</text>
+</g>
+<g class="c-teal">
+<rect x="228" y="205" width="72" height="80" rx="8" stroke-width="0.5"/>
+<text class="th" x="264" y="225" text-anchor="middle" dominant-baseline="central">Exec N</text>
+<text class="ts" x="264" y="244" text-anchor="middle" dominant-baseline="central">reads with</text>
+<text class="ts" x="264" y="261" text-anchor="middle" dominant-baseline="central">SAS token</text>
+</g>
+
+<!-- Snowflake warehouse -->
+<g class="c-coral">
+<rect x="380" y="90" width="260" height="72" rx="8" stroke-width="0.5"/>
+<text class="th" x="510" y="115" text-anchor="middle" dominant-baseline="central">Warehouse compute</text>
+<text class="ts" x="510" y="135" text-anchor="middle" dominant-baseline="central">Runs pushed-down SQL,</text>
+<text class="ts" x="510" y="151" text-anchor="middle" dominant-baseline="central">issues SAS tokens</text>
+</g>
+
+<!-- Temporary named internal stage object -->
+<g class="c-coral">
+<rect x="380" y="180" width="260" height="72" rx="8" stroke-width="0.5"/>
+<text class="th" x="510" y="205" text-anchor="middle" dominant-baseline="central">Temporary internal stage</text>
+<text class="ts" x="510" y="225" text-anchor="middle" dominant-baseline="central">Named stage in your schema,</text>
+<text class="ts" x="510" y="241" text-anchor="middle" dominant-baseline="central">created on session start</text>
+</g>
+
+<!-- Dedicated Azure storage account -->
+<g class="c-coral">
+<rect x="380" y="270" width="260" height="280" rx="14" stroke-width="0.5"/>
+<text class="th" x="510" y="295" text-anchor="middle" dominant-baseline="central">Dedicated Azure storage account</text>
+<text class="ts" x="510" y="313" text-anchor="middle" dominant-baseline="central">One per Snowflake account</text>
+<text class="ts" x="510" y="331" text-anchor="middle" dominant-baseline="central">&lt;account&gt;.blob.core.windows.net</text>
+</g>
+
+<g class="c-coral">
+<rect x="400" y="350" width="220" height="34" rx="6" stroke-width="0.5"/>
+<text class="ts" x="510" y="368" text-anchor="middle" dominant-baseline="central">result_001.csv.gz</text>
+</g>
+<g class="c-coral">
+<rect x="400" y="391" width="220" height="34" rx="6" stroke-width="0.5"/>
+<text class="ts" x="510" y="409" text-anchor="middle" dominant-baseline="central">result_002.csv.gz</text>
+</g>
+<g class="c-coral">
+<rect x="400" y="432" width="220" height="34" rx="6" stroke-width="0.5"/>
+<text class="ts" x="510" y="450" text-anchor="middle" dominant-baseline="central">result_N.csv.gz</text>
+</g>
+
+<text class="ts" x="510" y="488" text-anchor="middle" dominant-baseline="central">Invisible to your Azure portal</text>
+<text class="ts" x="510" y="506" text-anchor="middle" dominant-baseline="central">No lifecycle / monitoring control</text>
+<text class="ts" x="510" y="524" text-anchor="middle" dominant-baseline="central">SAS tokens valid max 36 hours</text>
+
+<!-- Snowflake SQL endpoint -->
+<g class="c-coral">
+<rect x="380" y="565" width="260" height="52" rx="8" stroke-width="0.5"/>
+<text class="th" x="510" y="585" text-anchor="middle" dominant-baseline="central">SQL endpoint</text>
+<text class="ts" x="510" y="603" text-anchor="middle" dominant-baseline="central">&lt;account&gt;.snowflakecomputing.com</text>
+</g>
+
+<!-- Arrow: Driver JDBC to Snowflake SQL endpoint (1) -->
+<path d="M 200 188 L 200 591 L 378 591" class="arr" stroke-dasharray="4 4" marker-end="url(#arrow)"/>
+<text class="ts" x="240" y="555" text-anchor="start" dominant-baseline="central">1. SQL + CREATE STAGE</text>
+<text class="ts" x="240" y="572" text-anchor="start" dominant-baseline="central">via JDBC (public TLS)</text>
+
+<!-- Arrow: warehouse creates stage (2) -->
+<path d="M 510 162 L 510 178" class="arr" marker-end="url(#arrow)"/>
+<text class="ts" x="563" y="170" text-anchor="start" dominant-baseline="central">2. Session</text>
+
+<!-- Arrow: Warehouse unloads to storage (3) -->
+<path d="M 510 252 L 510 268" class="arr" marker-end="url(#arrow)"/>
+<text class="ts" x="563" y="260" text-anchor="start" dominant-baseline="central">3. COPY INTO</text>
+
+<!-- Arrow: Stage files read by executors (4) -->
+<path d="M 398 360 L 320 280" class="arr" marker-end="url(#arrow)"/>
+<path d="M 398 400 L 320 275" class="arr" marker-end="url(#arrow)"/>
+<path d="M 398 445 L 320 270" class="arr" marker-end="url(#arrow)"/>
+<text class="ts" x="350" y="400" text-anchor="middle" dominant-baseline="central">4. Bulk read</text>
+<text class="ts" x="350" y="417" text-anchor="middle" dominant-baseline="central">via SAS tokens</text>
+<text class="ts" x="350" y="434" text-anchor="middle" dominant-baseline="central">(public TLS)</text>
+
+<!-- Legend -->
+<g class="c-gray">
+<rect x="20" y="655" width="640" height="128" rx="8" stroke-width="0.5"/>
+<text class="th" x="40" y="675" dominant-baseline="central">Flow summary</text>
+<text class="ts" x="40" y="697" dominant-baseline="central">Step 1 — Driver opens JDBC session; connector issues CREATE TEMPORARY STAGE in your schema.</text>
+<text class="ts" x="40" y="715" dominant-baseline="central">Step 2 — Snowflake warehouse runs the pushed-down SQL.</text>
+<text class="ts" x="40" y="733" dominant-baseline="central">Step 3 — Warehouse executes COPY INTO @&lt;stage&gt; to unload files into the dedicated storage account.</text>
+<text class="ts" x="40" y="751" dominant-baseline="central">Step 4 — Executors fetch files directly from Snowflake-owned storage over public TLS using SAS tokens.</text>
+<text class="ts" x="40" y="769" dominant-baseline="central">The bulk read path crosses your network boundary unless Business Critical private endpoints are enabled.</text>
+</g>
+</svg>
