@@ -1,4 +1,1 @@
-Current configuration:
-  ✓ token: ******** (from DATABRICKS_TOKEN environment variable)
-  ✓ profile: default
-  ✓ databricks_cli_path: C:\Users\mm26142\AppData\Local\Microsoft\WinGet\Links\databricks.exe
+Preparing source code for new app deployment.Error: failed to reach SUCCEEDED, got FAILED: Failed to import into the snapshot folder at path /Workspace/Users/8750609c-439f-48cd-a9bd-349f98dabe6a/src/01f13dc6e87b16e6a8c62cb846d7fcea/../../../../Users/connor.reed@barings.com/mcp-test-server/requirements.txt. Error: RESOURCE_DOES_NOT_EXIST: The parent folder (/Workspace/Users/8750609c-439f-48cd-a9bd-349f98dabe6a/src/01f13dc6e87b16e6a8c62cb846d7fcea/../../../../Users/connor.reed@barings.com/mcp-test-server) does not exist.
