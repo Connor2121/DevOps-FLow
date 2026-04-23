@@ -1,13 +1,7 @@
-    def drop_table_if_exists(self, table_full_name: str) -> None:
-        """
-        Drops a table if it exists in the database.
-        Uses sys.objects to check existence before dropping.
-        """
-        sql = (
-            "IF EXISTS (SELECT * FROM sys.objects "
-            f"WHERE object_id = OBJECT_ID(N'{table_full_name}') AND type = N'U') "
-            f"DROP TABLE {table_full_name};"
-        )
-        logger.info(f"execute SQL statement:\n{format_sql_statement(sql)}")
-        with self.conn_mgr.cursor(commit=True) as cursor:
-            cursor.execute(sql)
+def format_sql_statement(input: str):
+    return sqlparse.format(
+        input,
+        reindent_aligned=True,
+        keyword_case="upper",
+        identifier_case="lower",
+    )
