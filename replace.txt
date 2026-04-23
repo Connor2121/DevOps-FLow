@@ -1,1 +1,9 @@
-ProgrammingError: ('42000', "[42000] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Incorrect syntax near '/'. (102) (SQLExecDirectW)")
+2026-04-21 12:08:52 | INFO | az_sql_drop_delete_odbc_manager | execute SQL statement:
+IF EXISTS (
+        SELECT *
+          FROM sys.objects
+         WHERE object_id = object_id(n'Work.loanRemitHistory_0a2be8c0_3258_48eb_a911_99e0685e1590')
+           AND TYPE = n'U'
+       ) DROP TABLE work.loanremithistory_0a2be8c0_3258_48eb_a911_99e0685e1590;
+('42000', "[42000] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Incorrect syntax near '/'. (102) (SQLExecDirectW)")2026-04-21 12:08:53 | INFO | azure_sql_odbc_update_manager | execute SQL statement:
+UPDATE STATISTICS archive.loanremithistory;
