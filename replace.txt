@@ -1,9 +1,13 @@
-2026-04-21 12:08:52 | INFO | az_sql_drop_delete_odbc_manager | execute SQL statement:
-IF EXISTS (
-        SELECT *
-          FROM sys.objects
-         WHERE object_id = object_id(n'Work.loanRemitHistory_0a2be8c0_3258_48eb_a911_99e0685e1590')
-           AND TYPE = n'U'
-       ) DROP TABLE work.loanremithistory_0a2be8c0_3258_48eb_a911_99e0685e1590;
-('42000', "[42000] [Microsoft][ODBC Driver 18 for SQL Server][SQL Server]Incorrect syntax near '/'. (102) (SQLExecDirectW)")2026-04-21 12:08:53 | INFO | azure_sql_odbc_update_manager | execute SQL statement:
-UPDATE STATISTICS archive.loanremithistory;
+    def drop_table_if_exists(self, table_full_name: str) -> None:
+        """
+        Drops a table if it exists in the database.
+        Uses sys.objects to check existence before dropping.
+        """
+        sql = (
+            "IF EXISTS (SELECT * FROM sys.objects "
+            f"WHERE object_id = OBJECT_ID(N'{table_full_name}') AND type = N'U') "
+            f"DROP TABLE {table_full_name};"
+        )
+        logger.info(f"execute SQL statement:\n{format_sql_statement(sql)}")
+        with self.conn_mgr.cursor(commit=True) as cursor:
+            cursor.execute(sql)
