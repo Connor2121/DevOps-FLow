@@ -3,16 +3,11 @@ CREATE OR REPLACE FUNCTION main.default.test_tool(
   number_input INT DEFAULT 0 COMMENT 'Any integer'
 )
 RETURNS STRING
-LANGUAGE PYTHON
 COMMENT 'Test tool that echoes inputs and computes a simple transformation. Use this to verify agent tool-calling works end-to-end.'
-AS $$
-import json
-
-return json.dumps({
-    "received_text": text_input,
-    "received_number": number_input,
-    "text_length": len(text_input or ""),
-    "number_doubled": (number_input or 0) * 2,
-    "uppercase": (text_input or "").upper(),
-})
-$$;
+RETURN to_json(named_struct(
+  'received_text', text_input,
+  'received_number', number_input,
+  'text_length', length(coalesce(text_input, '')),
+  'number_doubled', coalesce(number_input, 0) * 2,
+  'uppercase', upper(coalesce(text_input, ''))
+));
