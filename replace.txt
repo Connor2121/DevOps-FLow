@@ -1,7 +1,18 @@
-def format_sql_statement(input: str):
-    return sqlparse.format(
-        input,
-        reindent_aligned=True,
-        keyword_case="upper",
-        identifier_case="lower",
-    )
+CREATE OR REPLACE FUNCTION main.default.test_tool(
+  text_input STRING COMMENT 'Any text the user wants processed',
+  number_input INT DEFAULT 0 COMMENT 'Any integer'
+)
+RETURNS STRING
+LANGUAGE PYTHON
+COMMENT 'Test tool that echoes inputs and computes a simple transformation. Use this to verify agent tool-calling works end-to-end.'
+AS $$
+import json
+
+return json.dumps({
+    "received_text": text_input,
+    "received_number": number_input,
+    "text_length": len(text_input or ""),
+    "number_doubled": (number_input or 0) * 2,
+    "uppercase": (text_input or "").upper(),
+})
+$$;
